@@ -12,7 +12,7 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 # --- CASHFREE CONFIGURATION (from .env) ---
 CASHFREE_CLIENT_ID = os.getenv('CASHFREE_CLIENT_ID')
 CASHFREE_CLIENT_SECRET = os.getenv('CASHFREE_CLIENT_SECRET')
-CASHFREE_SECRET_KEY = os.getenv('CASHFREE_CLIENT_SECRET')  # For webhook verification
+CASHFREE_SECRET_KEY = os.getenv('CASHFREE_SECRET_KEY')  # For webhook verification (must be separate key)
 CASHFREE_ENVIRONMENT = os.getenv('CASHFREE_ENVIRONMENT', 'PRODUCTION')
 """
 Django settings for myproject project.
@@ -41,7 +41,14 @@ SECRET_KEY = 'django-insecure-ya_zcsp%af_fz)o=j=_okv@gmpum*vu$#xmh%f=(82r52x2u-%
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = ['*']  # You might want to restrict this in production
+# Restrict allowed hosts for production security
+ALLOWED_HOSTS = [
+    'tickets.tapnex.tech',
+    'ticketing-website-o9431afou-prabhav-jains-projects.vercel.app',
+    'www.tickets.tapnex.tech',
+    '127.0.0.1',
+    'localhost'
+]
 
 
 # Application definition

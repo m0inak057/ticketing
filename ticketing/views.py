@@ -43,10 +43,10 @@ from .utils import generate_otp, send_otp_email
 # Removed: import imgkit
 
 # cashfree
-from cashfree_pg.api_client import Cashfree
 from cashfree_pg.models.create_order_request import CreateOrderRequest
 from cashfree_pg.models.order_meta import OrderMeta
 from cashfree_pg.models.customer_details import CustomerDetails
+from ticketing.cashfree_config import CashfreeSafe as Cashfree
 # Add these imports at the top of ticketing/views.py
 import hmac
 import hashlib
@@ -62,30 +62,36 @@ from .utils import generate_tickets_for_purchase # Assuming you have a function 
 
 # --- CASHFREE CONFIGURATION (from settings) ---
 from django.conf import settings
-
-# Validate Cashfree configuration
-if not settings.CASHFREE_CLIENT_ID:
-    print("ERROR: CASHFREE_CLIENT_ID not configured")
-if not settings.CASHFREE_CLIENT_SECRET:
-    print("ERROR: CASHFREE_CLIENT_SECRET not configured")
-
-print(f"DEBUG: Cashfree Environment: {getattr(settings, 'CASHFREE_ENVIRONMENT', 'SANDBOX')}")
-print(f"DEBUG: Client ID configured: {bool(settings.CASHFREE_CLIENT_ID)}")
-print(f"DEBUG: Client Secret configured: {bool(settings.CASHFREE_CLIENT_SECRET)}")
-
-Cashfree.XClientId = settings.CASHFREE_CLIENT_ID
-Cashfree.XClientSecret = settings.CASHFREE_CLIENT_SECRET
-if getattr(settings, 'CASHFREE_ENVIRONMENT', 'SANDBOX').upper() == 'PRODUCTION':
-    Cashfree.XEnvironment = Cashfree.PRODUCTION
-    print("DEBUG: Using Cashfree PRODUCTION environment")
-else:
-    Cashfree.XEnvironment = Cashfree.SANDBOX
-    print("DEBUG: Using Cashfree SANDBOX environment")
-CASHFREE_API_VERSION = "2023-08-01"
-
+import logging
 
 # Get the logger instance for this module
 logger = logging.getLogger(__name__)
+
+# Validate Cashfree configuration
+if not settings.CASHFREE_CLIENT_ID:
+    logger.critical("CRITICAL ERROR: CASHFREE_CLIENT_ID not configured. Payments will not work!")
+if not settings.CASHFREE_CLIENT_SECRET:
+    logger.critical("CRITICAL ERROR: CASHFREE_CLIENT_SECRET not configured. Payments will not work!")
+if not settings.CASHFREE_SECRET_KEY:
+    logger.critical("CRITICAL ERROR: CASHFREE_SECRET_KEY not configured. Webhook verification will fail!")
+
+logger.info(f"Cashfree Environment: {getattr(settings, 'CASHFREE_ENVIRONMENT', 'PRODUCTION')}")
+logger.info(f"Client ID configured: {bool(settings.CASHFREE_CLIENT_ID)}")
+logger.info(f"Client Secret configured: {bool(settings.CASHFREE_CLIENT_SECRET)}")
+logger.info(f"Secret Key configured: {bool(settings.CASHFREE_SECRET_KEY)}")
+
+Cashfree.XClientId = settings.CASHFREE_CLIENT_ID
+Cashfree.XClientSecret = settings.CASHFREE_CLIENT_SECRET
+
+# Enforce PRODUCTION mode for deployment
+if settings.DEBUG:
+    Cashfree.XEnvironment = Cashfree.SANDBOX
+    logger.warning("Using Cashfree SANDBOX environment (Debug mode)")
+else:
+    Cashfree.XEnvironment = Cashfree.PRODUCTION
+    logger.info("Using Cashfree PRODUCTION environment")
+
+CASHFREE_API_VERSION = "2023-08-01"
 
 def is_admin(user):
     return user.is_authenticated and user.role == 'ADMIN'

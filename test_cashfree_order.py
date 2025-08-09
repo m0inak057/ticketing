@@ -11,10 +11,10 @@ load_dotenv()
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tapnex_ticketing_system.settings')
 django.setup()
 
-from cashfree_pg.api_client import Cashfree
 from cashfree_pg.models.create_order_request import CreateOrderRequest
 from cashfree_pg.models.order_meta import OrderMeta
 from cashfree_pg.models.customer_details import CustomerDetails
+from ticketing.cashfree_config import CashfreeSafe as Cashfree
 
 def test_cashfree_order():
     try:
