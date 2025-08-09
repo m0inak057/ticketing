@@ -168,11 +168,22 @@ def generate_invoice_pdf(invoice):
     buffer.seek(0)
     return buffer
 
-def send_invoice_email(invoice):
+def send_invoice_email(invoice, force_send=False):
     """
     Send invoice PDF via email to the customer
+    Prevents duplicate emails unless force_send is True
     """
     try:
+        # Check if this is an existing invoice that may have already been emailed
+        if not force_send and invoice.pk:
+            # Check when the invoice was created - if it's not recent, it was likely already emailed
+            from django.utils import timezone
+            from datetime import timedelta
+            
+            if invoice.created_at < timezone.now() - timedelta(minutes=5):
+                logger.info(f"Skipping email for existing invoice {invoice.invoice_number} - likely already sent")
+                return True
+        
         # Generate PDF
         pdf_buffer = generate_invoice_pdf(invoice)
         
@@ -233,8 +244,19 @@ def send_invoice_email(invoice):
 def create_invoice_for_ticket(ticket, payment_transaction):
     """
     Create invoice record for a ticket purchase
+    Prevents duplicate invoices by checking if one already exists
     """
     try:
+        # Check if invoice already exists for this ticket
+        existing_invoice = Invoice.objects.filter(
+            ticket=ticket,
+            transaction=payment_transaction
+        ).first()
+        
+        if existing_invoice:
+            logger.info(f"Invoice already exists for ticket {ticket.ticket_number}: {existing_invoice.invoice_number}")
+            return existing_invoice
+        
         # Get attendee count from ticket type (default to 1 if not set)
         attendee_count = getattr(ticket.ticket_type, 'attendees_per_ticket', 1)
         

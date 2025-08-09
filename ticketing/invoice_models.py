@@ -32,7 +32,7 @@ class EventCommission(models.Model):
 
 class Invoice(models.Model):
     """Model to store invoice data for ticket purchases"""
-    ticket = models.ForeignKey('Ticket', on_delete=models.CASCADE, related_name='invoices')
+    ticket = models.OneToOneField('Ticket', on_delete=models.CASCADE, related_name='invoice')
     user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='invoices')
     event = models.ForeignKey('Event', on_delete=models.CASCADE, related_name='invoices')
     ticket_type = models.ForeignKey('TicketType', on_delete=models.CASCADE, related_name='invoices')
@@ -44,6 +44,10 @@ class Invoice(models.Model):
     
     invoice_number = models.CharField(max_length=50, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        # Ensure each ticket can only have one invoice
+        unique_together = ['ticket', 'transaction']
     
     def __str__(self):
         return f"Invoice #{self.invoice_number} - {self.ticket.ticket_number}"
