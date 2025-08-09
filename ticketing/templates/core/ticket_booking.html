@@ -23,6 +23,8 @@
                     </div>
                 </div>
             {% endif %}
+            
+            {% if event.banner_image_url or event.banner_image %}
             <div class="p-6">
                 <h1 class="text-3xl font-bold mb-2">{{ event.title }}</h1>
                     <div class="flex flex-wrap gap-4 text-gray-700">
