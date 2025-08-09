@@ -368,9 +368,20 @@
 <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-    const cashfree = new Cashfree({
-        mode: "sandbox" // Use "production" for live payments
-    });
+    // Initialize Cashfree with dynamic environment detection
+    // This will be set by the backend response
+    let cashfree = null;
+    
+    function initializeCashfree(isDebugMode) {
+        const mode = isDebugMode ? "sandbox" : "production";
+        console.log(`Initializing Cashfree in ${mode} mode`);
+        cashfree = new Cashfree({
+            mode: mode
+        });
+    }
+    
+    // Initialize with environment based on Django settings
+    initializeCashfree({% if debug %}true{% else %}false{% endif %});
 
 
     // --- TERMS AND CONDITIONS MODAL LOGIC ---
@@ -583,6 +594,9 @@ document.addEventListener("DOMContentLoaded", function() {
         })
         .then(data => {
             if (data.payment_session_id) {
+                // Reinitialize Cashfree with the correct environment from backend
+                initializeCashfree(data.debug);
+                
                 cashfree.checkout({
                     paymentSessionId: data.payment_session_id
                 });

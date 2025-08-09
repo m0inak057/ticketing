@@ -747,6 +747,7 @@ def checkout(request, event_id):
         'user': request.user,
         'total_attendees': total_attendees,
         'show_service_fee': False,  # Flag to control template display
+        'debug': settings.DEBUG,  # Pass debug flag for environment detection
     }
     return render(request, 'core/checkout_new.html', context)
 
@@ -1585,7 +1586,8 @@ def create_cashfree_order(request):
                     response_data = {
                         "payment_session_id": payment_session_id,
                         "order_id": cf_order_id,
-                        "payment_link": payment_link
+                        "payment_link": payment_link,
+                        "debug": settings.DEBUG  # Pass debug flag to frontend for environment detection
                     }
                     return JsonResponse(response_data)
                 else:
