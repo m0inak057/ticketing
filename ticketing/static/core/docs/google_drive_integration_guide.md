@@ -36,6 +36,20 @@ https://drive.google.com/file/d/FILE_ID/view
 https://drive.google.com/open?id=FILE_ID
 https://docs.google.com/document/d/FILE_ID/edit
 https://drive.google.com/file/d/FILE_ID/edit
+<iframe src="https://drive.google.com/file/d/FILE_ID/preview" width="640" height="480"></iframe>
+```
+
+### New: Iframe Support
+You can now paste Google Drive iframe preview codes directly into the form fields. The system will automatically extract the file ID and process it correctly.
+
+**Example iframe code:**
+```html
+<iframe src="https://drive.google.com/file/d/1nu-W80HaCOhyw_UcEP_I55tTJuv2gNic/preview" width="640" height="480" allow="autoplay"></iframe>
+```
+
+**Converts to:**
+```html
+<img src="https://drive.google.com/uc?export=view&id=1nu-W80HaCOhyw_UcEP_I55tTJuv2gNic" alt="Description">
 ```
 
 ## Testing Your URLs

@@ -145,24 +145,40 @@ class EventForm(forms.ModelForm):
             'end_time': forms.TimeInput(attrs={'type': 'time'}),
             'registration_start_date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
             'registration_deadline': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
-            'banner_image_url': forms.URLInput(attrs={
-                'placeholder': 'https://drive.google.com/file/d/your-file-id/view',
+            'banner_image_url': forms.TextInput(attrs={
+                'placeholder': 'https://drive.google.com/file/d/your-file-id/view OR paste iframe code',
                 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500'
             }),
         }
         help_texts = {
-            'banner_image_url': 'Paste the Google Drive shareable link for the banner image. Make sure the link is set to "Anyone with the link can view".',
+            'banner_image_url': 'Paste the Google Drive shareable link OR the iframe code from Google Drive preview. Both formats are supported.',
         }
     
     def clean_banner_image_url(self):
-        """Validate Google Drive URL format"""
+        """Validate Google Drive URL format or iframe code"""
         url = self.cleaned_data.get('banner_image_url')
         if url:
-            if not is_valid_google_drive_url(url):
-                raise ValidationError(
-                    'Please provide a valid Google Drive shareable link. '
-                    'Example: https://drive.google.com/file/d/your-file-id/view'
-                )
+            # Check if it's an iframe and extract the URL from it
+            iframe_match = re.search(r'<iframe[^>]*src="([^"]*)"', url)
+            if iframe_match:
+                # It's an iframe, extract the URL and validate that
+                extracted_url = iframe_match.group(1)
+                if not is_valid_google_drive_url(extracted_url):
+                    raise ValidationError(
+                        'The iframe contains an invalid Google Drive link. '
+                        'Please ensure the iframe src points to a valid Google Drive file.'
+                    )
+                # Store the original iframe code - the model will extract the ID
+                return url
+            else:
+                # It's a regular URL, validate it normally
+                if not is_valid_google_drive_url(url):
+                    raise ValidationError(
+                        'Please provide a valid Google Drive shareable link or iframe code. '
+                        'Examples: \n'
+                        '• https://drive.google.com/file/d/your-file-id/view\n'
+                        '• <iframe src="https://drive.google.com/file/d/your-file-id/preview" ...></iframe>'
+                    )
         return url
 
 class PromoCodeForm(forms.ModelForm):
@@ -243,9 +259,9 @@ class EventSponsorForm(forms.ModelForm):
                 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500',
                 'placeholder': 'Sponsor Name'
             }),
-            'logo_url': forms.URLInput(attrs={
+            'logo_url': forms.TextInput(attrs={
                 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500',
-                'placeholder': 'https://drive.google.com/file/d/your-file-id/view'
+                'placeholder': 'https://drive.google.com/file/d/your-file-id/view OR paste iframe code'
             }),
             'website_url': forms.URLInput(attrs={
                 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500',
@@ -261,20 +277,36 @@ class EventSponsorForm(forms.ModelForm):
             }),
         }
         help_texts = {
-            'logo_url': 'Paste the Google Drive shareable link for the sponsor logo. Make sure the link is set to "Anyone with the link can view".',
+            'logo_url': 'Paste the Google Drive shareable link OR the iframe code from Google Drive preview. Both formats are supported.',
             'sponsor_type': 'Specify the type of sponsorship (e.g., Ticketing Partner, Gold Sponsor, Venue Partner)',
             'order': 'Lower numbers appear first (e.g., 1 appears before 2)',
         }
     
     def clean_logo_url(self):
-        """Validate Google Drive URL format for sponsor logo"""
+        """Validate Google Drive URL format or iframe code for sponsor logo"""
         url = self.cleaned_data.get('logo_url')
         if url:
-            if not is_valid_google_drive_url(url):
-                raise ValidationError(
-                    'Please provide a valid Google Drive shareable link for the logo. '
-                    'Example: https://drive.google.com/file/d/your-file-id/view'
-                )
+            # Check if it's an iframe and extract the URL from it
+            iframe_match = re.search(r'<iframe[^>]*src="([^"]*)"', url)
+            if iframe_match:
+                # It's an iframe, extract the URL and validate that
+                extracted_url = iframe_match.group(1)
+                if not is_valid_google_drive_url(extracted_url):
+                    raise ValidationError(
+                        'The iframe contains an invalid Google Drive link. '
+                        'Please ensure the iframe src points to a valid Google Drive file.'
+                    )
+                # Store the original iframe code - the model will extract the ID
+                return url
+            else:
+                # It's a regular URL, validate it normally
+                if not is_valid_google_drive_url(url):
+                    raise ValidationError(
+                        'Please provide a valid Google Drive shareable link or iframe code for the logo. '
+                        'Examples: \n'
+                        '• https://drive.google.com/file/d/your-file-id/view\n'
+                        '• <iframe src="https://drive.google.com/file/d/your-file-id/preview" ...></iframe>'
+                    )
         return url
 
 # Formset for handling multiple sponsors

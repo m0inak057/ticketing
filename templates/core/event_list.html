@@ -35,9 +35,8 @@
             <div class="group bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 overflow-hidden hover:shadow-3xl transform hover:-translate-y-2 transition-all duration-500">
                 <!-- Event Image -->
                 <div class="relative overflow-hidden h-64">
-                    {% if event_data.event.get_banner_image_url %}
-                        <img src="{{ event_data.event.get_banner_image_url }}" alt="{{ event_data.event.title }}" 
-                             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    {% if event_data.event.banner_image_url %}
+                        {% google_drive_image event_data.event.banner_image_url event_data.event.title "w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" %}
                     {% elif event_data.event.banner_image %}
                         <img src="{{ event_data.event.banner_image.url }}" alt="{{ event_data.event.title }}" 
                              class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">

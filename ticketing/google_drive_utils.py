@@ -7,10 +7,10 @@ from typing import Optional
 
 def extract_google_drive_id(url: str) -> str:
     """
-    Extract Google Drive file ID from various URL formats
+    Extract Google Drive file ID from various URL formats including iframe preview links
     
     Args:
-        url: Google Drive URL in various formats
+        url: Google Drive URL in various formats or iframe code
         
     Returns:
         Extracted file ID or empty string if not found
@@ -19,21 +19,22 @@ def extract_google_drive_id(url: str) -> str:
         >>> extract_google_drive_id('https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view')
         '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms'
         
-        >>> extract_google_drive_id('https://drive.google.com/open?id=1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms')
+        >>> extract_google_drive_id('<iframe src="https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/preview">')
         '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms'
     """
     if not url:
         return ''
     
-    # Pattern for various Google Drive URL formats
+    # Pattern for various Google Drive URL formats including iframe previews
     patterns = [
-        r'/d/([a-zA-Z0-9-_]+)',  # https://drive.google.com/file/d/FILE_ID/view
+        r'/d/([a-zA-Z0-9-_]+)',  # https://drive.google.com/file/d/FILE_ID/view or /preview
         r'id=([a-zA-Z0-9-_]+)',  # https://drive.google.com/open?id=FILE_ID
         r'export=download&id=([a-zA-Z0-9-_]+)',  # Direct download links
         r'/d/([a-zA-Z0-9-_]+)/edit',  # Edit links
         r'spreadsheets/d/([a-zA-Z0-9-_]+)',  # Google Sheets
         r'document/d/([a-zA-Z0-9-_]+)',  # Google Docs
         r'presentation/d/([a-zA-Z0-9-_]+)',  # Google Slides
+        r'src="[^"]*\/d\/([a-zA-Z0-9-_]+)',  # iframe src links
     ]
     
     for pattern in patterns:
@@ -77,13 +78,13 @@ def get_google_drive_thumbnail_url(file_id: str, size: int = 800) -> str:
 
 def is_valid_google_drive_url(url: str) -> bool:
     """
-    Check if URL is a valid Google Drive link
+    Check if URL is a valid Google Drive link or iframe code
     
     Args:
-        url: URL to validate
+        url: URL or iframe code to validate
         
     Returns:
-        True if valid Google Drive URL, False otherwise
+        True if valid Google Drive URL or iframe, False otherwise
     """
     if not url:
         return False
@@ -93,6 +94,7 @@ def is_valid_google_drive_url(url: str) -> bool:
         r'drive\.google\.com/open\?id=[a-zA-Z0-9-_]+',
         r'docs\.google\.com/.*[?&]id=[a-zA-Z0-9-_]+',
         r'drive\.google\.com/.*[?&]id=[a-zA-Z0-9-_]+',
+        r'<iframe[^>]*src="[^"]*drive\.google\.com[^"]*"[^>]*>',  # iframe pattern
     ]
     
     return any(re.search(pattern, url) for pattern in patterns)

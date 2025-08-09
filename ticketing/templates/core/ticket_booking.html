@@ -9,14 +9,22 @@
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Event Details Header -->
         <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
-            {% if event.get_banner_image_url or event.banner_image %}
-                {% if event.get_banner_image_url %}
-                    <img src="{{ event.get_banner_image_url }}" alt="{{ event.title }}" class="w-full h-64 object-cover">
-                {% elif event.banner_image %}
+            {% if event.banner_image_url %}
+                {% google_drive_image event.banner_image_url event.title "w-full h-64 object-cover" %}
+            {% elif event.banner_image %}
                     <img src="{{ event.banner_image.url }}" alt="{{ event.title }}" class="w-full h-64 object-cover">
-                {% endif %}
-                <div class="p-6">
-                    <h1 class="text-3xl font-bold mb-2">{{ event.title }}</h1>
+            {% else %}
+                <div class="w-full h-64 bg-gradient-to-r from-tapnex-blue to-tapnex-light flex items-center justify-center">
+                    <div class="text-center text-white">
+                        <svg class="w-20 h-20 mx-auto mb-4 opacity-80" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/>
+                        </svg>
+                        <p class="text-lg font-medium">Event Image</p>
+                    </div>
+                </div>
+            {% endif %}
+            <div class="p-6">
+                <h1 class="text-3xl font-bold mb-2">{{ event.title }}</h1>
                     <div class="flex flex-wrap gap-4 text-gray-700">
                         <div class="flex items-center">
                             <i class="fas fa-calendar-alt mr-2"></i>

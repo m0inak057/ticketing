@@ -1,5 +1,8 @@
-{% extends 'base.html' %}
-{% load ticketing_extras %}
+{% extends 'base.html'                 <!-- Event Image -->
+                <div class="relative overflow-hidden h-56">
+                    {% if event_data.event.banner_image_url %}
+                        {% google_drive_image event_data.event.banner_image_url event_data.event.title "w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" %}
+                    {% elif event_data.event.banner_image %}% load ticketing_extras %}
 
 {% block title %}Events - TapNex's Ticketing System{% endblock %}
 
