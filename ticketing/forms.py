@@ -145,9 +145,10 @@ class EventForm(forms.ModelForm):
             'end_time': forms.TimeInput(attrs={'type': 'time'}),
             'registration_start_date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
             'registration_deadline': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
-            'banner_image_url': forms.TextInput(attrs={
-                'placeholder': 'https://drive.google.com/file/d/your-file-id/view OR paste iframe code',
-                'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500'
+            'banner_image_url': forms.Textarea(attrs={
+                'placeholder': 'Paste Google Drive link OR iframe code:\nhttps://drive.google.com/file/d/your-file-id/view\nOR\n<iframe src="https://drive.google.com/file/d/your-file-id/preview" ...></iframe>',
+                'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500',
+                'rows': 4
             }),
         }
         help_texts = {
@@ -259,9 +260,10 @@ class EventSponsorForm(forms.ModelForm):
                 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500',
                 'placeholder': 'Sponsor Name'
             }),
-            'logo_url': forms.TextInput(attrs={
+            'logo_url': forms.Textarea(attrs={
                 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500',
-                'placeholder': 'https://drive.google.com/file/d/your-file-id/view OR paste iframe code'
+                'placeholder': 'Paste Google Drive link OR iframe code:\nhttps://drive.google.com/file/d/your-file-id/view\nOR\n<iframe src="https://drive.google.com/file/d/your-file-id/preview" ...></iframe>',
+                'rows': 3
             }),
             'website_url': forms.URLInput(attrs={
                 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500',

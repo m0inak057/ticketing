@@ -76,7 +76,7 @@ class Event(models.Model):
     registration_start_date = models.DateTimeField(null=True, blank=True, help_text="When ticket sales begin")
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='organized_events')
     status = models.CharField(max_length=10, choices=EVENT_STATUS, default='DRAFT')
-    banner_image_url = models.URLField(blank=True, help_text="Google Drive shareable link for banner image")
+    banner_image_url = models.TextField(blank=True, help_text="Google Drive shareable link or iframe code for banner image")
     banner_image_id = models.CharField(max_length=200, blank=True, help_text="Extracted Google Drive file ID")
     banner_image = models.ImageField(upload_to='event_banners/', null=True, blank=True)  # Keep for backward compatibility
     featured = models.BooleanField(default=False)
@@ -141,7 +141,7 @@ class Event(models.Model):
 class EventSponsor(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='sponsors')
     sponsor_name = models.CharField(max_length=200)
-    logo_url = models.URLField(help_text="Google Drive shareable link for sponsor logo")
+    logo_url = models.TextField(help_text="Google Drive shareable link or iframe code for sponsor logo")
     logo_id = models.CharField(max_length=200, blank=True, help_text="Extracted Google Drive file ID")
     website_url = models.URLField(blank=True, help_text="Sponsor's website URL")
     sponsor_type = models.CharField(max_length=100, blank=True, help_text="Type of sponsorship (e.g., Ticketing Partner, Gold Sponsor, Venue Partner)")
