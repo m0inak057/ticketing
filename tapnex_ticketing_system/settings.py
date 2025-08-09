@@ -45,9 +45,12 @@ DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 ALLOWED_HOSTS = [
     'tickets.tapnex.tech',
     'ticketing-website-o9431afou-prabhav-jains-projects.vercel.app',
+    'ticketingtapnex-5l7hbbghx-m0inak057s-projects.vercel.app',
+    'ticketingtapnex-kcs7yto5e-m0inak057s-projects.vercel.app',
     'www.tickets.tapnex.tech',
     '127.0.0.1',
-    'localhost'
+    'localhost',
+    '.vercel.app',  # Allow any Vercel subdomain
 ]
 
 
