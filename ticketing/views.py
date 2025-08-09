@@ -71,14 +71,11 @@ logger = logging.getLogger(__name__)
 if not settings.CASHFREE_CLIENT_ID:
     logger.critical("CRITICAL ERROR: CASHFREE_CLIENT_ID not configured. Payments will not work!")
 if not settings.CASHFREE_CLIENT_SECRET:
-    logger.critical("CRITICAL ERROR: CASHFREE_CLIENT_SECRET not configured. Payments will not work!")
-if not settings.CASHFREE_SECRET_KEY:
-    logger.critical("CRITICAL ERROR: CASHFREE_SECRET_KEY not configured. Webhook verification will fail!")
+    logger.critical("CRITICAL ERROR: CASHFREE_CLIENT_SECRET not configured. Payments and webhook verification will not work!")
 
 logger.info(f"Cashfree Environment: {getattr(settings, 'CASHFREE_ENVIRONMENT', 'PRODUCTION')}")
 logger.info(f"Client ID configured: {bool(settings.CASHFREE_CLIENT_ID)}")
 logger.info(f"Client Secret configured: {bool(settings.CASHFREE_CLIENT_SECRET)}")
-logger.info(f"Secret Key configured: {bool(settings.CASHFREE_SECRET_KEY)}")
 
 Cashfree.XClientId = settings.CASHFREE_CLIENT_ID
 Cashfree.XClientSecret = settings.CASHFREE_CLIENT_SECRET
@@ -1737,33 +1734,81 @@ def payment_status(request):
             if not cashfree_order_id or not isinstance(cashfree_order_id, str) or not cashfree_order_id.startswith("order_"):
                 logger.error(f"Invalid cashfree_order_id: {cashfree_order_id} (type: {type(cashfree_order_id)})")
                 raise ValueError("Invalid order_id for Cashfree API")
-            order_details = Cashfree().PGFetchOrder(
-                x_api_version=CASHFREE_API_VERSION,
-                order_id=str(cashfree_order_id)
-            )
-
-            # Store response data for auditing
-            if order_details and hasattr(order_details, 'data'):
-                api_order_status = getattr(order_details.data, 'order_status', '').upper()
-                api_payment_status = getattr(order_details.data, 'payment_status', '').upper()
-                api_transaction_id = getattr(order_details.data, 'transaction_id', None)
-
-                # Update transaction ID if available from API
-                if api_transaction_id:
-                    payment_transaction.transaction_id = api_transaction_id
-
+            
+            # Validate credentials before making API calls
+            if not settings.CASHFREE_CLIENT_ID or not settings.CASHFREE_CLIENT_SECRET:
+                logger.error("Missing Cashfree credentials")
+                raise ValueError("Cashfree credentials not configured")
+            
+            # Use direct HTTP request to avoid SDK header issues
+            import requests
+            
+            # Set up API endpoint based on environment
+            if settings.DEBUG:
+                base_url = "https://sandbox.cashfree.com/pg"
+                logger.info("Using SANDBOX environment for payment verification")
+            else:
+                base_url = "https://api.cashfree.com/pg"
+                logger.info("Using PRODUCTION environment for payment verification")
+            
+            endpoint = f"{base_url}/orders/{cashfree_order_id}"
+            
+            headers = {
+                "Accept": "application/json",
+                "x-api-version": str(CASHFREE_API_VERSION),
+                "x-client-id": str(settings.CASHFREE_CLIENT_ID),
+                "x-client-secret": str(settings.CASHFREE_CLIENT_SECRET)
+            }
+            
+            response = requests.get(endpoint, headers=headers, timeout=30)
+            
+            if response.status_code == 200:
+                order_data = response.json()
+                
+                # Extract payment details from API response
+                api_order_status = order_data.get('order_status', '').upper()
+                api_payment_status = ''  # Not always available in order details
+                api_transaction_id = order_data.get('transaction_id')
+                cf_order_id = order_data.get('cf_order_id')
+                
+                logger.info(f"API verification successful - Order status: {api_order_status}, CF Order ID: {cf_order_id}")
+                
+                # Create a fake order_details object to match the existing logic below
+                class MockOrderData:
+                    def __init__(self, data):
+                        self.order_status = data.get('order_status', '')
+                        self.payment_status = api_payment_status  # May be empty
+                        self.transaction_id = data.get('transaction_id')
+                        self.cf_order_id = data.get('cf_order_id')
+                        
+                class MockOrderDetails:
+                    def __init__(self, data):
+                        self.data = MockOrderData(data)
+                        
+                order_details = MockOrderDetails(order_data)
+                
+                # Store response data for auditing
                 payment_transaction.response_data = {
                     **(payment_transaction.response_data or {}),
                     'api_response': {
                         'order_status': api_order_status,
                         'payment_status': api_payment_status,
                         'transaction_id': api_transaction_id,
+                        'cf_order_id': cf_order_id,
                         'verification_timestamp': timezone.now().isoformat(),
+                        'raw_response': order_data
                     }
                 }
                 payment_transaction.save()
-
-                logger.info(f"API verification result - Order status: {api_order_status}, Payment status: {api_payment_status}")
+                
+                # Update transaction ID if available from API
+                if api_transaction_id:
+                    payment_transaction.transaction_id = api_transaction_id
+                    
+            else:
+                logger.error(f"Cashfree API returned {response.status_code}: {response.text}")
+                raise Exception(f"API returned {response.status_code}: {response.text}")
+                
         except Exception as e:
             logger.error(f"Error verifying payment with Cashfree API: {e}")
             payment_transaction.response_data = {
@@ -1772,6 +1817,29 @@ def payment_status(request):
                 'api_error_timestamp': timezone.now().isoformat(),
             }
             payment_transaction.save()
+
+        # Store response data for auditing
+        if order_details and hasattr(order_details, 'data'):
+            api_order_status = getattr(order_details.data, 'order_status', '').upper()
+            api_payment_status = getattr(order_details.data, 'payment_status', '').upper()
+            api_transaction_id = getattr(order_details.data, 'transaction_id', None)
+
+            # Update transaction ID if available from API
+            if api_transaction_id:
+                payment_transaction.transaction_id = api_transaction_id
+
+            payment_transaction.response_data = {
+                **(payment_transaction.response_data or {}),
+                'api_response': {
+                    'order_status': api_order_status,
+                    'payment_status': api_payment_status,
+                    'transaction_id': api_transaction_id,
+                    'verification_timestamp': timezone.now().isoformat(),
+                }
+            }
+            payment_transaction.save()
+
+            logger.info(f"API verification result - Order status: {api_order_status}, Payment status: {api_payment_status}")
 
         # Step 2: Payment verification logic with multiple checks
         payment_verified = False
@@ -2030,16 +2098,19 @@ def get_payment_gateway_response(event_id):
 def verify_cashfree_signature(payload, signature, timestamp):
     """
     Verifies the webhook signature received from Cashfree to ensure authenticity.
+    Uses the API Secret (Client Secret) as per Cashfree's webhook verification process.
     """
     if not signature or not timestamp:
         logger.warning("Webhook signature verification failed: Missing signature or timestamp")
         return False
     
-    secret_key = getattr(settings, 'CASHFREE_SECRET_KEY', None)
+    # Use the API Secret (Client Secret) for webhook verification as per Cashfree documentation
+    secret_key = getattr(settings, 'CASHFREE_CLIENT_SECRET', None)
     if not secret_key:
-        logger.error("Webhook signature verification failed: CASHFREE_SECRET_KEY not configured")
+        logger.error("Webhook signature verification failed: CASHFREE_CLIENT_SECRET not configured")
         return False
     
+    # Cashfree webhook signature format: HMAC SHA-256 of (timestamp + payload) using API Secret
     message = timestamp + payload
     secret_bytes = secret_key.encode('utf-8')
     message_bytes = message.encode('utf-8')
@@ -2049,6 +2120,8 @@ def verify_cashfree_signature(payload, signature, timestamp):
     is_valid = hmac.compare_digest(expected_signature, signature)
     if not is_valid:
         logger.warning(f"Webhook signature verification failed: Expected {expected_signature}, got {signature}")
+        logger.info(f"Payload: {payload[:100]}... (truncated)")
+        logger.info(f"Timestamp: {timestamp}")
     
     return is_valid
 

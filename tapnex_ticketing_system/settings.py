@@ -11,8 +11,7 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 # --- CASHFREE CONFIGURATION (from .env) ---
 CASHFREE_CLIENT_ID = os.getenv('CASHFREE_CLIENT_ID')
-CASHFREE_CLIENT_SECRET = os.getenv('CASHFREE_CLIENT_SECRET')
-CASHFREE_SECRET_KEY = os.getenv('CASHFREE_SECRET_KEY')  # For webhook verification (must be separate key)
+CASHFREE_CLIENT_SECRET = os.getenv('CASHFREE_CLIENT_SECRET')  # Used for both API calls and webhook verification
 CASHFREE_ENVIRONMENT = os.getenv('CASHFREE_ENVIRONMENT', 'PRODUCTION')
 """
 Django settings for myproject project.

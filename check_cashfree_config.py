@@ -22,8 +22,8 @@ print("=== Cashfree Configuration Check ===\n")
 print(f"Cashfree Environment: {getattr(settings, 'CASHFREE_ENVIRONMENT', 'Not set')}")
 print(f"Client ID configured: {bool(settings.CASHFREE_CLIENT_ID)}")
 print(f"Client Secret configured: {bool(settings.CASHFREE_CLIENT_SECRET)}")
-print(f"Secret Key configured: {bool(getattr(settings, 'CASHFREE_SECRET_KEY', None))}")
 print(f"API Environment: {'PRODUCTION' if Cashfree.XEnvironment == Cashfree.PRODUCTION else 'SANDBOX'}")
+print("\nNote: Client Secret is used for both API calls and webhook verification")
 
 # Try to make a simple API call to validate credentials
 try:
