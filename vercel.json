@@ -30,6 +30,6 @@
     "DJANGO_SETTINGS_MODULE": "tapnex_ticketing_system.settings",
     "DEBUG": "False",
     "ALLOWED_HOSTS": "tickets.tapnex.tech,ticketing-website-o9431afou-prabhav-jains-projects.vercel.app",
-    "CASHFREE_ENVIRONMENT": "SANDBOX"
+    "CASHFREE_ENVIRONMENT": "PRODUCTION"
   }
 }
