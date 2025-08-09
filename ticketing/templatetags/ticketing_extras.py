@@ -1,13 +1,13 @@
 from django import template
 from django.utils.safestring import mark_safe
-from ..google_drive_utils import get_drive_image_url, extract_google_drive_id
+from ..google_drive_utils import get_drive_image_url, extract_google_drive_id, get_google_drive_lh3_url
 
 register = template.Library()
 
 @register.simple_tag
-def google_drive_image(url_or_id, alt_text="", css_class="", use_thumbnail=False, size=800):
+def google_drive_image(url_or_id, alt_text="", css_class="", use_thumbnail=True, size=1200):
     """
-    Template tag to display Google Drive images
+    Template tag to display Google Drive images with fallback handling
     
     Usage:
         {% google_drive_image event.banner_image_url "Event Banner" "w-full h-48 object-cover" %}
@@ -16,11 +16,39 @@ def google_drive_image(url_or_id, alt_text="", css_class="", use_thumbnail=False
     if not url_or_id:
         return ""
     
-    image_url = get_drive_image_url(url_or_id, use_thumbnail, size)
-    if not image_url:
+    # Get the file ID first
+    file_id = extract_google_drive_id(url_or_id)
+    if not file_id:
         return ""
     
-    return mark_safe(f'<img src="{image_url}" alt="{alt_text}" class="{css_class}">')
+    # Use lh3.googleusercontent.com as primary (most reliable)
+    primary_url = get_google_drive_lh3_url(file_id, size)
+    
+    # Generate fallback URLs
+    fallback_urls = [
+        get_drive_image_url(url_or_id, use_thumbnail, size),
+        f"https://drive.google.com/thumbnail?id={file_id}&sz=w{size}",
+        f"https://drive.google.com/uc?id={file_id}"
+    ]
+    
+    # Remove duplicates and empty URLs
+    fallback_urls = [url for url in fallback_urls if url and url != primary_url]
+    
+    # Create img tag with multiple fallback levels
+    img_html = f'<img src="{primary_url}" alt="{alt_text}" class="{css_class}" loading="lazy"'
+    
+    if fallback_urls:
+        # Create a chain of fallbacks
+        fallback_script = "this.onerror=null;"
+        for i, fallback_url in enumerate(fallback_urls[:2]):  # Limit to 2 fallbacks
+            fallback_script += f"this.src='{fallback_url}';this.onerror=function(){{this.onerror=null;}};"
+            break  # Use only the first fallback for now
+        
+        img_html += f' onerror="{fallback_script}"'
+    
+    img_html += '>'
+    
+    return mark_safe(img_html)
 
 @register.filter
 def google_drive_url(url_or_id):

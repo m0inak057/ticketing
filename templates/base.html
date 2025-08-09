@@ -1134,6 +1134,77 @@
         // Run on page load
         handleLogoLoading();
         
+        // Enhanced Google Drive Image Loading Handler
+        function handleGoogleDriveImages() {
+            const driveImages = document.querySelectorAll('img[src*="drive.google.com"]');
+            
+            driveImages.forEach(function(img) {
+                if (img.dataset.enhanced) return; // Already processed
+                img.dataset.enhanced = 'true';
+                
+                // Add loading state
+                img.style.backgroundColor = '#f3f4f6';
+                img.style.minHeight = '200px';
+                
+                const originalSrc = img.src;
+                const testImg = new Image();
+                
+                testImg.onload = function() {
+                    img.style.backgroundColor = '';
+                    img.style.minHeight = '';
+                    console.log('Google Drive image loaded successfully:', originalSrc);
+                };
+                
+                testImg.onerror = function() {
+                    console.warn('Google Drive image failed to load:', originalSrc);
+                    
+                    // Try alternative Google Drive URLs
+                    const fileIdMatch = originalSrc.match(/id=([a-zA-Z0-9-_]+)/);
+                    if (fileIdMatch) {
+                        const fileId = fileIdMatch[1];
+                        const alternatives = [
+                            `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`,
+                            `https://lh3.googleusercontent.com/d/${fileId}`,
+                            `https://drive.google.com/uc?export=view&id=${fileId}`
+                        ];
+                        
+                        let currentAlt = 0;
+                        function tryAlternative() {
+                            if (currentAlt < alternatives.length) {
+                                const altImg = new Image();
+                                altImg.onload = function() {
+                                    img.src = alternatives[currentAlt];
+                                    img.style.backgroundColor = '';
+                                    img.style.minHeight = '';
+                                    console.log('Alternative Google Drive URL worked:', alternatives[currentAlt]);
+                                };
+                                altImg.onerror = function() {
+                                    currentAlt++;
+                                    tryAlternative();
+                                };
+                                altImg.src = alternatives[currentAlt];
+                            } else {
+                                // All alternatives failed, show placeholder
+                                img.style.backgroundColor = '#e5e7eb';
+                                img.style.minHeight = '200px';
+                                img.style.display = 'flex';
+                                img.style.alignItems = 'center';
+                                img.style.justifyContent = 'center';
+                                img.alt = 'Image temporarily unavailable';
+                                console.error('All Google Drive image alternatives failed for:', originalSrc);
+                            }
+                        }
+                        tryAlternative();
+                    }
+                };
+                
+                testImg.src = originalSrc;
+            });
+        }
+        
+        // Run Google Drive image handler
+        handleGoogleDriveImages();
+        
         // Re-run if new content is dynamically loaded
         const observer = new MutationObserver(function(mutations) {
             mutations.forEach(function(mutation) {
@@ -1141,8 +1212,13 @@
                     mutation.addedNodes.forEach(function(node) {
                         if (node.nodeType === 1) { // Element node
                             const logos = node.querySelectorAll ? node.querySelectorAll('img[src*="TAPNEX_LOGO_BG.jpg"], img[src*="logos"]') : [];
+                            const driveImages = node.querySelectorAll ? node.querySelectorAll('img[src*="drive.google.com"]') : [];
+                            
                             if (logos.length > 0) {
                                 handleLogoLoading();
+                            }
+                            if (driveImages.length > 0) {
+                                handleGoogleDriveImages();
                             }
                         }
                     });

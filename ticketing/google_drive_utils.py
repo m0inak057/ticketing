@@ -76,6 +76,23 @@ def get_google_drive_thumbnail_url(file_id: str, size: int = 800) -> str:
     return f"https://drive.google.com/thumbnail?id={file_id}&sz=w{size}"
 
 
+def get_google_drive_lh3_url(file_id: str, size: int = 800) -> str:
+    """
+    Get lh3.googleusercontent.com direct URL for Google Drive image
+    This is often more reliable than other formats
+    
+    Args:
+        file_id: Google Drive file ID
+        size: Image width in pixels
+        
+    Returns:
+        Direct lh3.googleusercontent.com URL
+    """
+    if not file_id:
+        return ''
+    return f"https://lh3.googleusercontent.com/d/{file_id}=w{size}"
+
+
 def is_valid_google_drive_url(url: str) -> bool:
     """
     Check if URL is a valid Google Drive link or iframe code
@@ -175,13 +192,13 @@ def validate_and_extract_drive_info(url: str) -> dict:
 
 
 # Template tags helper functions
-def get_drive_image_url(url_or_id: str, use_thumbnail: bool = False, size: int = 800) -> str:
+def get_drive_image_url(url_or_id: str, use_thumbnail: bool = True, size: int = 800) -> str:
     """
     Helper function for templates to get the appropriate Google Drive image URL
     
     Args:
         url_or_id: Either a Google Drive URL or file ID
-        use_thumbnail: Whether to use thumbnail URL
+        use_thumbnail: Whether to use thumbnail URL (default True for better reliability)
         size: Thumbnail size if use_thumbnail is True
         
     Returns:
